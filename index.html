@@ -1,0 +1,228 @@
+<!DOCTYPE html> 
+<html lang="no"> 
+    <head> 
+        <meta charset="UTF-8"> 
+        <title>Veggtennis</title>
+        <link rel="icon" href="ikon.png">
+        <style>
+            body{
+                background-color: gainsboro;
+            }
+            #minCanvas{
+                border: 20px solid lightpink;
+            }
+            #divPoeng{
+                width: 600px;
+                background-color: lightpink;
+                height: 30px;
+                line-height: 30px;
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+            #hdnPoeng, #hdnRekord, a{
+                font-size: 20px;
+                color: gray;
+                font-family: arial;
+                margin: 0;
+            }
+            #hdnPoeng{
+                float: left;
+            }
+            #hdnRekord{
+                float: right;
+            }
+            a{
+                text-decoration: none;
+            }
+            
+        </style>
+    </head>
+    
+    <body>
+        <canvas width="600" height="400" id="minCanvas"></canvas>
+        
+        <div id="divPoeng">
+            <h1 id="hdnPoeng">Poeng: 0</h1>
+            <h1 id="hdnRekord">Rekord: 0</h1>
+        </div>
+        
+        <audio id="treffLyd" src="lyd.mp3"></audio>
+        <audio id="gameOver" src="gameOver.mp3"></audio>
+        
+        <a href="index.html" id="restart"></a>
+        
+        <script>
+            var minCanvas = document.getElementById("minCanvas");
+            var ctx = minCanvas.getContext("2d");
+            var theGameIsOn = true;
+            
+            var bane ={
+                bredde : minCanvas.width,
+                hoyde : minCanvas.height,
+                grasfarge : "Gray",
+                linjefarge : "White",
+                linjetykkelse : 4
+            };
+            
+            var ball ={
+                radius : 7,
+                xpos: 100,
+                ypos: 100,
+                farge: "pink",
+                xretning: -1,
+                yretning: 1,
+                xfart: 4.2,
+                yfart: 4.2
+            };
+            
+            var racket ={
+                "bredde" : 10,
+                "hoyde" : 50,
+                "farge" : "White",
+                "xpos" : bane.bredde - 15,
+                "ypos" : bane.hoyde / 2,
+                "yretning" : 0,
+                "yfart" : 5.5
+            };
+            
+            var motspelar ={
+                "bredde" : 10,
+                "hoyde" : 50,
+                "farge" : "white",
+                "xpos" : 15,
+                "ypos" : ball.ypos
+            };
+            
+            var hdnPoeng = document.getElementById("hdnPoeng");
+            var hdnRekord = document.getElementById("hdnRekord");
+            var poeng = 0;
+            var treffLyd = document.getElementById("treffLyd");
+            var gameOver = document.getElementById("gameOver");
+            var restart = document.getElementById("restart");
+            
+            if(localStorage.rekord === undefined){
+                    localStorage.rekord = 0;
+                }
+                hdnRekord.innerHTML = "Rekord: " + localStorage.rekord;
+            
+            function tegnBane(){
+                ctx.fillStyle = bane.grasfarge;
+                ctx.fillRect(0,0,bane.bredde, bane.hoyde);
+                ctx.fillStyle = bane.linjefarge;
+                ctx.fillRect(bane.bredde/2-bane.linjetykkelse/2,0,bane.linjetykkelse, bane.hoyde);
+            }
+            
+            function tegnBall(){
+                ctx.beginPath();
+                ctx.arc(ball.xpos, ball.ypos, ball.radius, 0, Math.PI*2);
+                ctx.closePath();
+                ctx.fillStyle = ball.farge;
+                ctx.fill();
+                ball.xpos = ball.xpos + ball.xfart * ball.xretning;
+                ball.ypos = ball.ypos + ball.yfart * ball.yretning;
+            }
+            
+            function tegnRacket(){
+                ctx.fillStyle = racket.farge;
+                ctx.fillRect(racket.xpos, racket.ypos, racket.bredde, racket.hoyde);
+                
+                if(racket.ypos <= 0 && racket.yretning === -1){
+                    return;
+                }
+                if(racket.ypos + racket.hoyde >= bane.hoyde && racket.yretning === 1){
+                    return;
+                }
+                racket.ypos = racket.ypos + racket.yfart * racket.yretning;
+                
+            }
+            
+            function tegnMotstander(){
+                ctx.fillStyle = motspelar.farge;
+                ctx.fillRect(motspelar.xpos, ball.ypos - motspelar.hoyde / 2, motspelar.bredde, motspelar.hoyde);
+            }
+            
+            function sjekkBallTreffVegg(){
+                if(ball.xpos <= ball.radius){
+                    ball.xretning = 1;
+                }
+                if(ball.ypos + ball.radius >= bane.hoyde){
+                    ball.yretning = -1;
+                }
+                if(ball.ypos <= ball.radius){
+                    ball.yretning = 1;
+                }
+            }
+            
+            function sjekkBallTreffRacket(){
+                var ballTilVenstre = ball.xpos + ball.radius < racket.xpos;
+                var ballTilHoyre = ball.xpos - ball.radius > racket.xpos + racket.bredde;
+                var ballErOver = ball.ypos + ball.radius < racket.ypos;
+                var ballErUnder = ball.ypos - ball.radius > racket.ypos + racket.hoyde;
+                if(!ballTilVenstre && !ballTilHoyre && !ballErOver && !ballErUnder){
+                    ball.xretning = -1;
+                    poeng = poeng + 1;
+                    hdnPoeng.innerHTML = "Poeng: " + poeng;
+                    treffLyd.play();
+                }
+                
+                if(poeng > localStorage.rekord){
+                    localStorage.rekord = poeng;
+                    hdnRekord.innerHTML = "Ny rekord: " + poeng;
+                    hdnRekord.style.color = "black";
+                }
+            }
+            
+            function sjekkBallTreffMotstander(){
+                if(ball.xpos <= ball.radius + motspelar.xpos + motspelar.bredde){
+                    ball.xretning = 1;
+                    treffLyd.play();
+                }
+            }
+            
+            function sjekkBallUtenforBane(){
+                if(ball.xpos + ball.radius > bane.bredde){
+                    theGameIsOn = false;
+                    gameOver.play();
+                    restart.innerHTML = "Prøv igjen";
+                }
+            }
+            
+            document.onkeydown = function(evt){
+                var tastekode = evt.keyCode;
+                if(tastekode === 38){
+                    racket.yretning = -1;
+                }
+                if(tastekode === 40){
+                    racket.yretning = 1;
+                }
+            }
+            
+            document.onkeyup = function(evt){
+                var tastekode = evt.keyCode;
+                if(tastekode === 38 && racket.yretning === -1){
+                    racket.yretning = 0;}
+                if(tastekode === 40 && racket.yretning === 1){
+                    racket.yretning = 0;}
+            }
+            
+            function gameLoop(){
+                tegnBane();
+                tegnBall();
+                tegnRacket();
+                tegnMotstander();
+                sjekkBallTreffVegg();
+                sjekkBallTreffMotstander();
+                sjekkBallTreffRacket();
+                sjekkBallUtenforBane();
+                
+                if(theGameIsOn){
+                    requestAnimationFrame(gameLoop);
+                }
+            }
+            gameLoop();
+            
+            
+            
+        </script>
+    </body>
+<html>
