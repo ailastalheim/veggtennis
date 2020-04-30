@@ -49,8 +49,6 @@
         <audio id="treffLyd" src="lyd.mp3"></audio>
         <audio id="gameOver" src="gameOver.mp3"></audio>
         
-        <a href="index.html" id="restart"></a>
-        
         <script>
             var minCanvas = document.getElementById("minCanvas");
             var ctx = minCanvas.getContext("2d");
@@ -98,7 +96,6 @@
             var poeng = 0;
             var treffLyd = document.getElementById("treffLyd");
             var gameOver = document.getElementById("gameOver");
-            var restart = document.getElementById("restart");
             
             if(localStorage.rekord === undefined){
                     localStorage.rekord = 0;
@@ -183,7 +180,6 @@
                 if(ball.xpos + ball.radius > bane.bredde){
                     theGameIsOn = false;
                     gameOver.play();
-                    restart.innerHTML = "Prøv igjen";
                 }
             }
             
